@@ -4,6 +4,14 @@ import type { ActivityItem, EngineEvent, EngineState } from './types.js';
 const POLL_MS = 2000;
 const MAX_ACTIVITY = 80;
 
+/**
+ * Demo mode runs the *real* engine entirely in the browser on the deterministic
+ * simulated feed, so the dashboard works as a static site with no backend
+ * (used for the public deployment). Otherwise it talks to the @noname/api
+ * server over REST + WebSocket.
+ */
+export const DEMO = import.meta.env.VITE_DEMO === '1';
+
 export type ConnectionStatus = 'connecting' | 'live' | 'offline';
 
 let counter = 0;
@@ -20,7 +28,7 @@ function eventToActivity(ev: EngineEvent): ActivityItem | null {
         id: nextId(),
         ts: ev.timestamp,
         level: Number(ev.trade.netPnlUsd) >= 0 ? 'info' : 'warn',
-        text: `Closed ${ev.trade.symbol} (${ev.trade.exitReason}) · ${ev.trade.netPnlUsd} USD`,
+        text: `Closed ${ev.trade.symbol} (${ev.trade.exitReason}) · ${Number(ev.trade.netPnlUsd).toFixed(2)} USD`,
       };
     case 'decision':
       if (ev.decision.action === 'ENTER')
@@ -31,13 +39,57 @@ function eventToActivity(ev: EngineEvent): ActivityItem | null {
   }
 }
 
+// `serialize` mirrors the wire format (fixed-point money → decimal strings) so
+// the in-browser engine produces exactly what the REST API would.
+const serialize = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
 export function useEngine() {
   const [state, setState] = useState<EngineState | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const demoEngineRef = useRef<any>(null);
 
+  const pushActivity = useCallback((ev: EngineEvent) => {
+    const item = eventToActivity(ev);
+    if (item) setActivity((prev) => [item, ...prev].slice(0, MAX_ACTIVITY));
+  }, []);
+
+  // --- Demo mode: run the engine in-browser -------------------------------
+  useEffect(() => {
+    if (!DEMO) return;
+    let disposed = false;
+    let unsub: (() => void) | undefined;
+
+    void (async () => {
+      const [{ createEngine }, { noopLogger }] = await Promise.all([
+        import('@noname/engine'),
+        import('@noname/core'),
+      ]);
+      if (disposed) return;
+      const engine = createEngine({ seed: 1337, tickIntervalMs: 1500, logger: noopLogger });
+      demoEngineRef.current = engine;
+      unsub = engine.onEvent((ev) => {
+        const wire = serialize(ev) as unknown as EngineEvent;
+        pushActivity(wire);
+        if (wire.type === 'tick') setState(serialize(engine.getState()) as unknown as EngineState);
+      });
+      engine.start();
+      setStatus('live');
+      setState(serialize(engine.getState()) as unknown as EngineState);
+    })();
+
+    return () => {
+      disposed = true;
+      unsub?.();
+      demoEngineRef.current?.stop();
+    };
+  }, [pushActivity]);
+
+  // --- Server mode: REST polling for snapshot panels ----------------------
   const refresh = useCallback(async () => {
+    if (DEMO) return;
     try {
       const res = await fetch('/api/state');
       if (!res.ok) throw new Error(String(res.status));
@@ -47,15 +99,16 @@ export function useEngine() {
     }
   }, []);
 
-  // REST polling for snapshot panels.
   useEffect(() => {
+    if (DEMO) return;
     void refresh();
     const t = setInterval(refresh, POLL_MS);
     return () => clearInterval(t);
   }, [refresh]);
 
-  // WebSocket for the live activity feed and connection liveness.
+  // --- Server mode: WebSocket for the live activity feed ------------------
   useEffect(() => {
+    if (DEMO) return;
     let closed = false;
     let retry: ReturnType<typeof setTimeout>;
 
@@ -72,13 +125,12 @@ export function useEngine() {
       ws.onerror = () => ws.close();
       ws.onmessage = (msg) => {
         try {
-          const ev = JSON.parse(msg.data) as EngineEvent;
+          const ev = JSON.parse(msg.data) as EngineEvent | { type: 'state'; state: EngineState };
           if (ev.type === 'state') {
             setState(ev.state);
             return;
           }
-          const item = eventToActivity(ev);
-          if (item) setActivity((prev) => [item, ...prev].slice(0, MAX_ACTIVITY));
+          pushActivity(ev);
         } catch {
           /* ignore malformed frames */
         }
@@ -91,12 +143,23 @@ export function useEngine() {
       clearTimeout(retry);
       wsRef.current?.close();
     };
-  }, []);
+  }, [pushActivity]);
 
-  const control = useCallback(async (action: 'start' | 'stop') => {
-    await fetch(`/api/engine/${action}`, { method: 'POST' });
-    void refresh();
-  }, [refresh]);
+  const control = useCallback(
+    async (action: 'start' | 'stop') => {
+      if (DEMO) {
+        const engine = demoEngineRef.current;
+        if (!engine) return;
+        if (action === 'start') engine.start();
+        else engine.stop();
+        setState(serialize(engine.getState()) as unknown as EngineState);
+        return;
+      }
+      await fetch(`/api/engine/${action}`, { method: 'POST' });
+      void refresh();
+    },
+    [refresh],
+  );
 
   return { state, status, activity, control };
 }

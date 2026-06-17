@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 /** Branded id helpers keep entity ids from being accidentally interchanged. */
 export type Brand<T, B extends string> = T & { readonly __brand: B };
 
@@ -8,6 +6,13 @@ export type DecisionId = Brand<string, 'DecisionId'>;
 export type PositionId = Brand<string, 'PositionId'>;
 export type TradeId = Brand<string, 'TradeId'>;
 export type SnapshotId = Brand<string, 'SnapshotId'>;
+
+/**
+ * UUID via the Web Crypto API, available on `globalThis.crypto` in both Node
+ * (>=19) and browsers. Keeping ids platform-neutral lets the same engine run
+ * server-side and entirely in the browser (demo mode).
+ */
+const randomUUID = (): string => globalThis.crypto.randomUUID();
 
 export const newDecisionId = (): DecisionId => `dec_${randomUUID()}` as DecisionId;
 export const newPositionId = (): PositionId => `pos_${randomUUID()}` as PositionId;

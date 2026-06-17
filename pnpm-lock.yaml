@@ -53,6 +53,12 @@ importers:
 
   apps/dashboard:
     dependencies:
+      '@noname/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@noname/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       react:
         specifier: ^18.3.1
         version: 18.3.1

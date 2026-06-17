@@ -1,4 +1,4 @@
-import type { ConnectionStatus } from '../useEngine.js';
+import { DEMO, type ConnectionStatus } from '../useEngine.js';
 import type { EngineState } from '../types.js';
 import { usd, n, tone } from '../format.js';
 
@@ -29,6 +29,11 @@ export function Header({
         <div className="text-[11px] text-terminal-muted uppercase tracking-widest">
           AI Memecoin Trading Terminal · Paper
         </div>
+        {DEMO && (
+          <span className="tag border-terminal-accent/40 text-terminal-accent" title="The engine is running live in your browser on a deterministic simulated market.">
+            Demo · in-browser engine
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-6">
