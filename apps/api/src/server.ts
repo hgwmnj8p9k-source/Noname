@@ -1,6 +1,10 @@
+import { existsSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
+import fastifyStatic from '@fastify/static';
 import { ConsoleLogger, type EngineEvent } from '@noname/core';
 import { createEngine } from '@noname/engine';
 import { loadApiConfig } from './config.js';
@@ -12,7 +16,11 @@ const engine = createEngine({
   startingCashUsd: config.startingCashUsd,
   tickIntervalMs: config.tickIntervalMs,
   seed: config.seed,
-  dexScreenerQueries: config.dexScreenerQueries,
+  includeSimulator: config.includeSimulator,
+  dexScreener: config.dexScreener,
+  riskConfig: config.riskConfig,
+  strategyConfig: config.strategyConfig,
+  venueConfig: config.venueConfig,
   logger: logger.child('engine'),
 });
 
@@ -34,7 +42,9 @@ app.get('/api/config', async () => ({
   startingCashUsd: config.startingCashUsd,
   tickIntervalMs: config.tickIntervalMs,
   seed: config.seed,
-  liveSources: config.dexScreenerQueries.length > 0 ? ['dexscreener'] : [],
+  includeSimulator: config.includeSimulator,
+  liveSources: config.dexScreener ? ['dexscreener'] : [],
+  discovery: config.dexScreener?.discoverChains ?? [],
 }));
 
 app.post('/api/engine/start', async () => {
@@ -78,6 +88,24 @@ engine.onEvent((event: EngineEvent) => {
     }
   }
 });
+
+// --- Serve the built dashboard (single-service deployment) -------------------
+
+const apiRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const staticRoot = resolve(apiRoot, config.staticDir);
+if (existsSync(staticRoot)) {
+  await app.register(fastifyStatic, { root: staticRoot, wildcard: false });
+  // SPA fallback: any non-API, non-WS GET returns the app shell.
+  app.setNotFoundHandler((req, reply) => {
+    if (req.method === 'GET' && !req.url.startsWith('/api') && !req.url.startsWith('/ws')) {
+      return reply.sendFile('index.html');
+    }
+    return reply.code(404).send({ error: 'not found' });
+  });
+  logger.info('serving dashboard', { staticRoot });
+} else {
+  logger.warn('dashboard build not found; API only', { staticRoot });
+}
 
 // --- Lifecycle --------------------------------------------------------------
 

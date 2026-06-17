@@ -5,6 +5,12 @@
     "outDir": "./dist",
     "lib": ["ES2022"]
   },
-  "references": [{ "path": "../../packages/core" }, { "path": "../../packages/engine" }],
+  "references": [
+    { "path": "../../packages/core" },
+    { "path": "../../packages/engine" },
+    { "path": "../../packages/market-data" },
+    { "path": "../../packages/strategy" },
+    { "path": "../../packages/paper-trading" }
+  ],
   "include": ["src/**/*.ts"]
 }

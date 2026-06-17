@@ -1,7 +1,17 @@
 import { defaultSignals } from '@noname/signals';
-import { DexScreenerSource, SimulatedFeed, type MarketDataSource } from '@noname/market-data';
-import { DEFAULT_PAPER_VENUE_CONFIG } from '@noname/paper-trading';
-import { DEFAULT_RISK_CONFIG, DEFAULT_STRATEGY_CONFIG } from '@noname/strategy';
+import {
+  DexScreenerSource,
+  SimulatedFeed,
+  type DexScreenerOptions,
+  type MarketDataSource,
+} from '@noname/market-data';
+import { DEFAULT_PAPER_VENUE_CONFIG, type PaperVenueConfig } from '@noname/paper-trading';
+import {
+  DEFAULT_RISK_CONFIG,
+  DEFAULT_STRATEGY_CONFIG,
+  type RiskConfig,
+  type StrategyConfig,
+} from '@noname/strategy';
 import type { Clock, Logger } from '@noname/core';
 import type { Repositories } from '@noname/persistence';
 import { Engine } from './engine.js';
@@ -16,34 +26,48 @@ export interface EngineFactoryOptions {
   readonly tickIntervalMs?: number;
   /** Seed for the deterministic simulated feed. */
   readonly seed?: number;
-  /** Optional DexScreener search queries; when set, the real adapter is added. */
-  readonly dexScreenerQueries?: readonly string[];
+  /** Include the offline simulator in the universe (default true). Set false
+   * for a real-data-only deployment. */
+  readonly includeSimulator?: boolean;
+  /** Real DexScreener data: search queries and/or new-token discovery chains. */
+  readonly dexScreener?: DexScreenerOptions;
+  /** Overrides merged onto the default risk configuration. */
+  readonly riskConfig?: Partial<RiskConfig>;
+  /** Overrides merged onto the default strategy configuration. */
+  readonly strategyConfig?: Partial<StrategyConfig>;
+  readonly venueConfig?: Partial<PaperVenueConfig>;
+  readonly opportunityConvictionThreshold?: number;
   readonly clock?: Clock;
   readonly logger?: Logger;
   readonly repositories?: Repositories;
 }
 
 /**
- * Builds a fully-wired engine with sensible defaults: the deterministic
- * simulated feed plus the default multi-family signal suite. Pass DexScreener
- * queries to additionally pull live data (it degrades gracefully if the network
- * or API is unavailable).
+ * Builds a fully-wired engine. By default it runs on the deterministic offline
+ * simulator. Provide `dexScreener` options to ingest real market data
+ * (discovery of fresh pump.fun/Solana tokens and/or specific search queries);
+ * the adapter degrades gracefully if the network or API is unavailable.
  */
 export function createEngine(options: EngineFactoryOptions = {}): Engine {
-  const sources: MarketDataSource[] = [new SimulatedFeed(options.seed ?? 1337)];
-  if (options.dexScreenerQueries && options.dexScreenerQueries.length > 0) {
-    sources.push(new DexScreenerSource(options.dexScreenerQueries));
+  const sources: MarketDataSource[] = [];
+  if (options.includeSimulator ?? true) {
+    sources.push(new SimulatedFeed(options.seed ?? 1337));
   }
+  if (options.dexScreener) {
+    const ds = new DexScreenerSource(options.dexScreener);
+    if (ds.enabled) sources.push(ds);
+  }
+  if (sources.length === 0) sources.push(new SimulatedFeed(options.seed ?? 1337));
 
   const config: EngineConfig = {
     startingCashUsd: options.startingCashUsd ?? 10_000,
     tickIntervalMs: options.tickIntervalMs ?? 2_000,
     sources,
     signals: defaultSignals(),
-    strategyConfig: DEFAULT_STRATEGY_CONFIG,
-    riskConfig: DEFAULT_RISK_CONFIG,
-    venueConfig: DEFAULT_PAPER_VENUE_CONFIG,
-    opportunityConvictionThreshold: 0.2,
+    strategyConfig: { ...DEFAULT_STRATEGY_CONFIG, ...options.strategyConfig },
+    riskConfig: { ...DEFAULT_RISK_CONFIG, ...options.riskConfig },
+    venueConfig: { ...DEFAULT_PAPER_VENUE_CONFIG, ...options.venueConfig },
+    opportunityConvictionThreshold: options.opportunityConvictionThreshold ?? 0.2,
   };
 
   return new Engine(config, options.clock, options.logger, options.repositories);
