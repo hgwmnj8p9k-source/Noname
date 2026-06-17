@@ -11,6 +11,10 @@ const MAX_ACTIVITY = 80;
  * server over REST + WebSocket.
  */
 export const DEMO = import.meta.env.VITE_DEMO === '1';
+/** When set (with DEMO), the in-browser engine runs on REAL DexScreener data
+ * instead of the simulator. DexScreener permits browser (CORS) access, so this
+ * needs no backend. */
+export const REAL_DATA = import.meta.env.VITE_REAL_DATA === '1';
 
 export type ConnectionStatus = 'connecting' | 'live' | 'offline';
 
@@ -68,7 +72,24 @@ export function useEngine() {
         import('@noname/core'),
       ]);
       if (disposed) return;
-      const engine = createEngine({ seed: 1337, tickIntervalMs: 1500, logger: noopLogger });
+      const engine = REAL_DATA
+        ? createEngine({
+            startingCashUsd: 100,
+            tickIntervalMs: 15_000,
+            includeSimulator: false,
+            dexScreener: { discoverChains: ['solana'], maxTracked: 40 },
+            // $100 small-account risk profile.
+            riskConfig: {
+              riskPerTradePct: 0.04,
+              maxPositionPct: 0.3,
+              maxConcurrentPositions: 3,
+              minPositionUsd: 5,
+            },
+            // Realistic low Solana swap cost.
+            venueConfig: { networkFeeUsd: 0.03 },
+            logger: noopLogger,
+          })
+        : createEngine({ seed: 1337, tickIntervalMs: 1500, logger: noopLogger });
       demoEngineRef.current = engine;
       unsub = engine.onEvent((ev) => {
         const wire = serialize(ev) as unknown as EngineEvent;

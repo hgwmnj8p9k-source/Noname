@@ -1,4 +1,4 @@
-import { DEMO, type ConnectionStatus } from '../useEngine.js';
+import { DEMO, REAL_DATA, type ConnectionStatus } from '../useEngine.js';
 import type { EngineState } from '../types.js';
 import { usd, n, tone } from '../format.js';
 
@@ -30,8 +30,15 @@ export function Header({
           AI Memecoin Trading Terminal · Paper
         </div>
         {DEMO && (
-          <span className="tag border-terminal-accent/40 text-terminal-accent" title="The engine is running live in your browser on a deterministic simulated market.">
-            Demo · in-browser engine
+          <span
+            className={`tag ${REAL_DATA ? 'border-up/50 text-up' : 'border-terminal-accent/40 text-terminal-accent'}`}
+            title={
+              REAL_DATA
+                ? 'The engine runs live in your browser on REAL DexScreener (Solana) data. Paper trades only — no funds at risk. Runs while this tab is open.'
+                : 'The engine runs live in your browser on a deterministic simulated market.'
+            }
+          >
+            {REAL_DATA ? 'LIVE · real Solana data · paper' : 'Demo · simulated · in-browser'}
           </span>
         )}
       </div>
