@@ -13,6 +13,12 @@ export interface SnapshotMetrics {
   readonly liquidityLocked: boolean;
   readonly socialMentions: number;
   readonly socialSentiment: number;
+  readonly priceChange5m?: number;
+  readonly priceChange1h?: number;
+  readonly volume5mUsd?: number;
+  readonly volume1hUsd?: number;
+  readonly buys5m?: number;
+  readonly sells5m?: number;
 }
 
 export interface RawObservation {

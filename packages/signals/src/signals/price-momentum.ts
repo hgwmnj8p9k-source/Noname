@@ -16,7 +16,25 @@ export class PriceMomentumSignal implements Signal {
   ) {}
 
   evaluate(subject: TokenWithHistory): SignalResult {
-    const { history } = subject;
+    const { history, latest } = subject;
+
+    // Prefer the source's live short-window price changes (e.g. DexScreener
+    // m5/h1) when available — far more responsive than tick-derived deltas.
+    if (latest.priceChange5m !== undefined || latest.priceChange1h !== undefined) {
+      const short = latest.priceChange5m ?? latest.priceChange1h ?? 0;
+      const medium = latest.priceChange1h ?? latest.priceChange5m ?? 0;
+      const blended = short * 0.6 + medium * 0.4;
+      return {
+        signalId: this.id,
+        family: this.family,
+        score: squash(blended * 4),
+        confidence: 0.9,
+        evidence: [
+          `Price ${(short * 100).toFixed(1)}% over 5m, ${(medium * 100).toFixed(1)}% over 1h`,
+        ],
+      };
+    }
+
     const shortChange = pctChange(history, this.shortLookback, 'priceUsd');
     const mediumChange = pctChange(history, this.mediumLookback, 'priceUsd');
 

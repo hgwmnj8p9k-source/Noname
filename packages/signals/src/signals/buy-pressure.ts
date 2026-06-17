@@ -15,6 +15,30 @@ export class BuyPressureSignal implements Signal {
 
   evaluate(subject: TokenWithHistory): SignalResult {
     const { history, latest } = subject;
+
+    // Prefer live 5-minute transaction flow when available — a real-time read
+    // on buy/sell pressure rather than a slow 24h total.
+    if (latest.buys5m !== undefined && latest.sells5m !== undefined) {
+      const total5m = latest.buys5m + latest.sells5m;
+      if (total5m === 0) {
+        return {
+          signalId: this.id,
+          family: this.family,
+          score: 0,
+          confidence: 0.2,
+          evidence: ['No transactions in the last 5 minutes'],
+        };
+      }
+      const imbalance = (latest.buys5m - latest.sells5m) / total5m;
+      return {
+        signalId: this.id,
+        family: this.family,
+        score: squash(imbalance * 1.5),
+        confidence: clamp(total5m / 60, 0.3, 1),
+        evidence: [`5m flow: ${latest.buys5m} buys vs ${latest.sells5m} sells (${(imbalance * 100).toFixed(0)}% net)`],
+      };
+    }
+
     const totalTxns = latest.buys + latest.sells;
 
     if (totalTxns === 0) {

@@ -31,6 +31,19 @@ export interface MarketSnapshot {
   readonly socialMentions: number;
   /** Normalized social sentiment, -1..1. */
   readonly socialSentiment: number;
+
+  /**
+   * Short-window metrics, when the source provides them (e.g. DexScreener's
+   * m5/h1 windows). These make signals responsive on real data that otherwise
+   * only exposes slow 24h aggregates. Signals use them when present and fall
+   * back to deriving deltas from snapshot history when absent.
+   */
+  readonly priceChange5m?: number;
+  readonly priceChange1h?: number;
+  readonly volume5mUsd?: number;
+  readonly volume1hUsd?: number;
+  readonly buys5m?: number;
+  readonly sells5m?: number;
 }
 
 export interface TokenWithHistory {

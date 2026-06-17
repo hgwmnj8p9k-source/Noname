@@ -1,16 +1,22 @@
 import { tokenId, type Chain, type SourceHealth, type Token } from '@noname/core';
 import type { MarketDataSource, RawObservation, SnapshotMetrics } from './source.js';
 
+interface TxnWindow {
+  buys?: number;
+  sells?: number;
+}
+
 interface DexPair {
   chainId?: string;
   baseToken?: { address?: string; name?: string; symbol?: string };
   priceUsd?: string;
   liquidity?: { usd?: number };
-  volume?: { h24?: number };
+  volume?: { m5?: number; h1?: number; h6?: number; h24?: number };
+  priceChange?: { m5?: number; h1?: number; h6?: number; h24?: number };
   marketCap?: number;
   fdv?: number;
   pairCreatedAt?: number;
-  txns?: { h24?: { buys?: number; sells?: number } };
+  txns?: { m5?: TxnWindow; h1?: TxnWindow; h6?: TxnWindow; h24?: TxnWindow };
 }
 
 interface TokenProfile {
@@ -100,6 +106,7 @@ export class DexScreenerSource implements MarketDataSource {
       name: pair.baseToken?.name ?? 'Unknown',
       createdAt: pair.pairCreatedAt,
     };
+    const pct = (v: number | undefined): number | undefined => (typeof v === 'number' ? v / 100 : undefined);
     const metrics: SnapshotMetrics = {
       priceUsd: price,
       liquidityUsd: pair.liquidity?.usd ?? 0,
@@ -112,6 +119,13 @@ export class DexScreenerSource implements MarketDataSource {
       liquidityLocked: false,
       socialMentions: 0,
       socialSentiment: 0,
+      // Live short-window metrics — the responsive signal inputs for real data.
+      priceChange5m: pct(pair.priceChange?.m5),
+      priceChange1h: pct(pair.priceChange?.h1),
+      volume5mUsd: pair.volume?.m5,
+      volume1hUsd: pair.volume?.h1,
+      buys5m: pair.txns?.m5?.buys,
+      sells5m: pair.txns?.m5?.sells,
     };
     return { token, metrics };
   }
