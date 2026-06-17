@@ -32,7 +32,8 @@ dashboard.
 - [ ] Additional real adapters: on-chain (RPC/indexer), social (X/Telegram/
       Reddit), news; rate-limit + backoff middleware; source health tracking.
 - [ ] Snapshot store with retention/compaction; historical analytics queries.
-- [ ] Backtesting harness that replays stored history through the same engine.
+- [x] Backtesting harness that replays data through the same engine, with a
+      reproducible report and per-signal efficacy analysis (`@noname/backtest`).
 
 ## Milestone 3 — Intelligence depth
 

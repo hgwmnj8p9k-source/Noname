@@ -9,6 +9,7 @@
     { "path": "./packages/decision-log" },
     { "path": "./packages/persistence" },
     { "path": "./packages/engine" },
+    { "path": "./packages/backtest" },
     { "path": "./apps/api" }
   ]
 }

@@ -72,8 +72,19 @@ Then open http://localhost:5173.
 
 ```bash
 pnpm typecheck   # project-wide TypeScript build
-pnpm test        # 26 unit + integration tests (deterministic)
+pnpm test        # unit + integration tests (deterministic)
 pnpm lint
+```
+
+### Backtest
+
+Replay the market through the **same engine** the live system uses and get a
+reproducible report (equity curve, win rate, profit factor, exit breakdown, and
+per-signal *efficacy* — which signals actually predicted winners):
+
+```bash
+pnpm backtest -- --seed 1337 --ticks 600
+pnpm backtest -- --seed 7 --ticks 800 --cash 25000 --json report.json
 ```
 
 ## Configuration
@@ -104,6 +115,7 @@ packages/paper-trading  Realistic execution venue + portfolio accounting
 packages/decision-log   Post-trade analysis + performance statistics
 packages/persistence    Repository contracts + in-memory store
 packages/engine         Orchestrator + continuous loop + event stream
+packages/backtest       Deterministic backtest harness + signal-efficacy report
 apps/api                Fastify REST + WebSocket server
 apps/dashboard          React/Vite/Tailwind trading terminal
 ```
