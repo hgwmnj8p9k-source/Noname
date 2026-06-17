@@ -1,0 +1,14 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/market-data" },
+    { "path": "./packages/signals" },
+    { "path": "./packages/strategy" },
+    { "path": "./packages/paper-trading" },
+    { "path": "./packages/decision-log" },
+    { "path": "./packages/persistence" },
+    { "path": "./packages/engine" },
+    { "path": "./apps/api" }
+  ]
+}

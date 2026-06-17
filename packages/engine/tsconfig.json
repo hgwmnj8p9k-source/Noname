@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "./src", "outDir": "./dist" },
+  "references": [
+    { "path": "../core" },
+    { "path": "../market-data" },
+    { "path": "../signals" },
+    { "path": "../strategy" },
+    { "path": "../paper-trading" },
+    { "path": "../decision-log" },
+    { "path": "../persistence" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}
