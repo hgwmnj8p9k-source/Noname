@@ -16,7 +16,7 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint ."
+    "lint": "eslint . --ext .ts,.tsx"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",

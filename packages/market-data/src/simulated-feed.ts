@@ -116,8 +116,8 @@ export class SimulatedFeed implements MarketDataSource {
         sentimentTarget = 0.25;
         break;
       case 'pump':
-        drift = 0.06 + this.rng() * 0.08;
-        volMult = 2.5 + this.rng() * 3;
+        drift = 0.025 + this.rng() * 0.035;
+        volMult = 2.2 + this.rng() * 2.5;
         socialDelta = 3 + this.rng() * 6;
         sentimentTarget = 0.7;
         break;

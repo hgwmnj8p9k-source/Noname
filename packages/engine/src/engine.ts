@@ -9,7 +9,6 @@ import {
   type EngineEventListener,
   type Logger,
   type MarketSnapshot,
-  type Position,
   type Token,
   type TokenId,
   type TokenWithHistory,
