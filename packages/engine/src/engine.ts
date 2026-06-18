@@ -17,6 +17,7 @@ import {
 import { MarketAggregator } from '@noname/market-data';
 import { ExitEvaluator, StrategyEngine, type PortfolioState } from '@noname/strategy';
 import { PaperExecutionVenue, PaperPortfolio } from '@noname/paper-trading';
+import type { ExecutionVenue } from '@noname/core';
 import { computePerformance, TradeAnalyzer } from '@noname/decision-log';
 import { createInMemoryRepositories, type Repositories } from '@noname/persistence';
 import type { EngineConfig } from './config.js';
@@ -35,7 +36,7 @@ export class Engine {
   private readonly aggregator: MarketAggregator;
   private readonly strategy: StrategyEngine;
   private readonly exits: ExitEvaluator;
-  private readonly venue: PaperExecutionVenue;
+  private readonly venue: ExecutionVenue;
   private readonly portfolio: PaperPortfolio;
   private readonly analyzer: TradeAnalyzer;
   private readonly repos: Repositories;
@@ -59,7 +60,7 @@ export class Engine {
     this.aggregator = new MarketAggregator(config.sources, repos.snapshots, logger);
     this.strategy = new StrategyEngine(config.signals, config.strategyConfig, config.riskConfig);
     this.exits = new ExitEvaluator(config.riskConfig);
-    this.venue = new PaperExecutionVenue(config.venueConfig);
+    this.venue = config.venue ?? new PaperExecutionVenue(config.venueConfig);
     this.portfolio = new PaperPortfolio(fixed(config.startingCashUsd));
     this.analyzer = new TradeAnalyzer(config.strategyConfig);
   }

@@ -21,6 +21,8 @@ const engine = createEngine({
   riskConfig: config.riskConfig,
   strategyConfig: config.strategyConfig,
   venueConfig: config.venueConfig,
+  jupiterExecution: config.jupiterExecution,
+  jupiterConfig: config.lpFeePct !== undefined ? { lpFeePct: config.lpFeePct } : undefined,
   logger: logger.child('engine'),
 });
 
@@ -45,6 +47,7 @@ app.get('/api/config', async () => ({
   includeSimulator: config.includeSimulator,
   liveSources: config.dexScreener ? ['dexscreener'] : [],
   discovery: config.dexScreener?.discoverChains ?? [],
+  execution: config.jupiterExecution ? 'jupiter (real on-chain quotes)' : 'modeled',
 }));
 
 app.post('/api/engine/start', async () => {

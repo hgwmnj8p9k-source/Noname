@@ -14,6 +14,9 @@ export interface ApiConfig {
   readonly riskConfig: Partial<RiskConfig>;
   readonly strategyConfig: Partial<StrategyConfig>;
   readonly venueConfig: Partial<PaperVenueConfig>;
+  /** Use real Jupiter quotes for execution pricing. */
+  readonly jupiterExecution: boolean;
+  readonly lpFeePct?: number;
   readonly autoStart: boolean;
   /** Absolute or relative path to the built dashboard to serve, if present. */
   readonly staticDir: string;
@@ -99,6 +102,9 @@ export function loadApiConfig(): ApiConfig {
     riskConfig: { ...smallAccountDefaults(startingCashUsd), ...riskOverrides },
     strategyConfig: strategyOverrides,
     venueConfig: venueOverrides,
+    // Default to real Jupiter pricing whenever Solana discovery is on.
+    jupiterExecution: (process.env.EXECUTION ?? (discoverChains.includes('solana') ? 'jupiter' : 'model')) === 'jupiter',
+    lpFeePct: optNum('LP_FEE_PCT'),
     autoStart: (process.env.AUTO_START ?? 'true') !== 'false',
     staticDir: process.env.STATIC_DIR ?? '../dashboard/dist',
   };

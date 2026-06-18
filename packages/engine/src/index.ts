@@ -5,7 +5,14 @@ import {
   type DexScreenerOptions,
   type MarketDataSource,
 } from '@noname/market-data';
-import { DEFAULT_PAPER_VENUE_CONFIG, type PaperVenueConfig } from '@noname/paper-trading';
+import {
+  DEFAULT_JUPITER_CONFIG,
+  DEFAULT_PAPER_VENUE_CONFIG,
+  JupiterExecutionVenue,
+  PaperExecutionVenue,
+  type JupiterVenueConfig,
+  type PaperVenueConfig,
+} from '@noname/paper-trading';
 import {
   DEFAULT_RISK_CONFIG,
   DEFAULT_STRATEGY_CONFIG,
@@ -36,6 +43,10 @@ export interface EngineFactoryOptions {
   /** Overrides merged onto the default strategy configuration. */
   readonly strategyConfig?: Partial<StrategyConfig>;
   readonly venueConfig?: Partial<PaperVenueConfig>;
+  /** Use real Jupiter on-chain quotes for execution pricing (Solana). Falls
+   * back to the modeled venue for non-Solana tokens or unroutable quotes. */
+  readonly jupiterExecution?: boolean;
+  readonly jupiterConfig?: Partial<JupiterVenueConfig>;
   readonly opportunityConvictionThreshold?: number;
   readonly clock?: Clock;
   readonly logger?: Logger;
@@ -59,6 +70,14 @@ export function createEngine(options: EngineFactoryOptions = {}): Engine {
   }
   if (sources.length === 0) sources.push(new SimulatedFeed(options.seed ?? 1337));
 
+  const venueConfig = { ...DEFAULT_PAPER_VENUE_CONFIG, ...options.venueConfig };
+  const venue = options.jupiterExecution
+    ? new JupiterExecutionVenue(
+        { ...DEFAULT_JUPITER_CONFIG, ...options.jupiterConfig },
+        new PaperExecutionVenue(venueConfig),
+      )
+    : undefined;
+
   const config: EngineConfig = {
     startingCashUsd: options.startingCashUsd ?? 10_000,
     tickIntervalMs: options.tickIntervalMs ?? 2_000,
@@ -66,7 +85,8 @@ export function createEngine(options: EngineFactoryOptions = {}): Engine {
     signals: defaultSignals(),
     strategyConfig: { ...DEFAULT_STRATEGY_CONFIG, ...options.strategyConfig },
     riskConfig: { ...DEFAULT_RISK_CONFIG, ...options.riskConfig },
-    venueConfig: { ...DEFAULT_PAPER_VENUE_CONFIG, ...options.venueConfig },
+    venueConfig,
+    venue,
     opportunityConvictionThreshold: options.opportunityConvictionThreshold ?? 0.2,
   };
 
