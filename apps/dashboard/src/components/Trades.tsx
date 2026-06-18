@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Trade } from '../types.js';
-import { Panel } from './ui.js';
+import { Panel, TokenLink } from './ui.js';
 import { duration, n, pct, price, timeAgo, tone, usd } from '../format.js';
 
 function TradeRow({ trade }: { trade: Trade }) {
@@ -9,7 +9,7 @@ function TradeRow({ trade }: { trade: Trade }) {
   return (
     <>
       <tr className="border-t border-terminal-border/50 cursor-pointer hover:bg-terminal-bg/40" onClick={() => setOpen((o) => !o)}>
-        <td className="font-semibold">{trade.symbol}</td>
+        <td onClick={(e) => e.stopPropagation()}><TokenLink symbol={trade.symbol} tokenId={trade.tokenId} /></td>
         <td className="text-right text-terminal-muted">{price(trade.entryPrice)}</td>
         <td className="text-right text-terminal-muted">{price(trade.exitPrice)}</td>
         <td className="text-[10px] text-terminal-muted">{trade.exitReason}</td>
@@ -76,9 +76,9 @@ export function Trades({ trades }: { trades: Trade[] }) {
         <table className="w-full">
           <thead>
             <tr>
-              <th>Symbol</th>
-              <th className="text-right">Entry</th>
-              <th className="text-right">Exit</th>
+              <th>Token</th>
+              <th className="text-right">Bought @</th>
+              <th className="text-right">Sold @</th>
               <th>Reason</th>
               <th className="text-right">Held</th>
               <th className="text-right">Net P&L</th>

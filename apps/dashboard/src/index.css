@@ -21,7 +21,10 @@
     @apply px-3 py-2 text-[11px] uppercase tracking-widest text-terminal-muted border-b border-terminal-border flex items-center justify-between shrink-0;
   }
   .panel-body {
-    @apply p-3 overflow-auto min-h-0;
+    @apply p-3 overflow-auto min-h-0 max-h-[55vh] lg:max-h-none;
+  }
+  .panel-body table {
+    @apply min-w-full;
   }
   .tag {
     @apply text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border;

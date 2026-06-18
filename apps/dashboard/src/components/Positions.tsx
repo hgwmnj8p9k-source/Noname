@@ -1,5 +1,5 @@
 import type { PositionMark } from '../types.js';
-import { Panel } from './ui.js';
+import { Panel, TokenLink } from './ui.js';
 import { price, tone, usd, pct } from '../format.js';
 
 export function Positions({ positions }: { positions: PositionMark[] }) {
@@ -11,9 +11,9 @@ export function Positions({ positions }: { positions: PositionMark[] }) {
         <table className="w-full">
           <thead>
             <tr>
-              <th>Symbol</th>
-              <th className="text-right">Entry</th>
-              <th className="text-right">Mark</th>
+              <th>Token</th>
+              <th className="text-right">Bought @</th>
+              <th className="text-right">Now</th>
               <th className="text-right">Value</th>
               <th className="text-right">Stop / Target</th>
               <th className="text-right">P&L</th>
@@ -22,7 +22,7 @@ export function Positions({ positions }: { positions: PositionMark[] }) {
           <tbody>
             {positions.map((m) => (
               <tr key={m.position.id} className="border-t border-terminal-border/50">
-                <td className="font-semibold">{m.position.symbol}</td>
+                <td><TokenLink symbol={m.position.symbol} tokenId={m.position.tokenId} /></td>
                 <td className="text-right text-terminal-muted">{price(m.position.entryPrice)}</td>
                 <td className="text-right">{price(m.currentPrice)}</td>
                 <td className="text-right">{usd(m.marketValueUsd)}</td>

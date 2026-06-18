@@ -26,7 +26,7 @@ export class StrategyEngine {
   constructor(
     signals: readonly Signal[],
     private readonly strategyConfig: StrategyConfig = DEFAULT_STRATEGY_CONFIG,
-    riskConfig: RiskConfig = DEFAULT_RISK_CONFIG,
+    private readonly riskConfig: RiskConfig = DEFAULT_RISK_CONFIG,
   ) {
     this.confluence = new ConfluenceEngine(signals, strategyConfig);
     this.risk = new RiskManager(riskConfig);
@@ -49,6 +49,18 @@ export class StrategyEngine {
         action: 'SKIP',
         reasoning: assessment.reasoning,
         rejectionReason: assessment.rejectionReason ?? 'Did not meet entry criteria',
+      };
+    }
+
+    // Pre-trade liquidity floor: avoid dust fills and rug-prone micro-caps.
+    const liquidityUsd = subject.latest.liquidityUsd;
+    if (this.riskConfig.minLiquidityUsd > 0 && liquidityUsd < this.riskConfig.minLiquidityUsd) {
+      const reason = `Liquidity $${Math.round(liquidityUsd).toLocaleString()} below floor $${this.riskConfig.minLiquidityUsd.toLocaleString()}`;
+      return {
+        ...base,
+        action: 'SKIP',
+        reasoning: [...assessment.reasoning, reason],
+        rejectionReason: reason,
       };
     }
 

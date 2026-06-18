@@ -1,5 +1,5 @@
 import type { MarketRow } from '../types.js';
-import { Panel } from './ui.js';
+import { Panel, TokenLink } from './ui.js';
 import { compactUsd, n, pct, price, tone } from '../format.js';
 
 export function Market({ market }: { market: MarketRow[] }) {
@@ -20,7 +20,7 @@ export function Market({ market }: { market: MarketRow[] }) {
           {market.map((m) => (
             <tr key={m.token.id} className="border-t border-terminal-border/50">
               <td>
-                <span className="font-semibold">{m.token.symbol}</span>
+                <TokenLink symbol={m.token.symbol} chain={m.token.chain} address={m.token.address} />
                 {m.hasPosition && <span className="ml-1 tag border-terminal-accent/40 text-terminal-accent">held</span>}
                 <span className="ml-1 text-[10px] text-terminal-muted uppercase">{m.token.chain}</span>
               </td>

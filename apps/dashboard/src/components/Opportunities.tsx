@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Opportunity } from '../types.js';
-import { ConfirmDots, FamilyTag, Panel, ScoreBar } from './ui.js';
+import { ConfirmDots, FamilyTag, Panel, ScoreBar, TokenLink } from './ui.js';
 import { usd } from '../format.js';
 
 function OpportunityCard({ opp }: { opp: Opportunity }) {
@@ -10,7 +10,9 @@ function OpportunityCard({ opp }: { opp: Opportunity }) {
   return (
     <div className="border border-terminal-border rounded-md mb-2 bg-terminal-bg/40">
       <button onClick={() => setOpen((o) => !o)} className="w-full flex items-center gap-3 px-3 py-2 text-left">
-        <span className="font-semibold w-20 truncate">{opp.token.symbol}</span>
+        <span className="w-20 truncate">
+          <TokenLink symbol={opp.token.symbol} chain={opp.token.chain} address={opp.token.address} />
+        </span>
         <span className={`tag ${isEnter ? 'border-up/40 text-up' : 'border-terminal-border text-terminal-muted'}`}>
           {d.action}
         </span>

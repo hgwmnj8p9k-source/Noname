@@ -66,6 +66,7 @@ export interface PostTradeAnalysis {
 
 export interface Trade {
   id: string;
+  tokenId: string;
   symbol: string;
   entryPrice: string;
   exitPrice: string;

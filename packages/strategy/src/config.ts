@@ -27,6 +27,9 @@ export interface RiskConfig {
   readonly trailingStopPct: number;
   /** Smallest position worth opening, in USD. */
   readonly minPositionUsd: number;
+  /** Refuse to enter tokens whose pool liquidity is below this (USD). Guards
+   * against dust fills and rug-prone micro-caps. 0 disables the floor. */
+  readonly minLiquidityUsd: number;
 }
 
 export const DEFAULT_STRATEGY_CONFIG: StrategyConfig = {
@@ -52,6 +55,7 @@ export const DEFAULT_RISK_CONFIG: RiskConfig = {
   takeProfitPct: 0.4,
   trailingStopPct: 0.18,
   minPositionUsd: 25,
+  minLiquidityUsd: 0,
 };
 
 export const ALL_FAMILIES: readonly SignalFamily[] = ['price', 'liquidity', 'onchain', 'social'];

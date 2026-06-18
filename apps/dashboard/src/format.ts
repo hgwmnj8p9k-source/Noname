@@ -41,6 +41,20 @@ export function timeAgo(ts: number): string {
   return `${Math.floor(s / 3600)}h ago`;
 }
 
+const DEX_CHAINS = new Set(['solana', 'ethereum', 'base', 'bsc']);
+
+/** DexScreener chart URL for a real token, or null for simulated tokens. */
+export function dexLink(chain: string, address: string): string | null {
+  return DEX_CHAINS.has(chain) ? `https://dexscreener.com/${chain}/${address}` : null;
+}
+
+/** Build a DexScreener link from a `${chain}:${address}` token id. */
+export function dexLinkFromTokenId(tokenId: string): string | null {
+  const idx = tokenId.indexOf(':');
+  if (idx === -1) return null;
+  return dexLink(tokenId.slice(0, idx), tokenId.slice(idx + 1));
+}
+
 export function duration(ms: number): string {
   const m = Math.floor(ms / 60000);
   if (m < 60) return `${m}m`;

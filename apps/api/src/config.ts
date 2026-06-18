@@ -71,6 +71,7 @@ export function loadApiConfig(): ApiConfig {
     ['maxConcurrentPositions', optNum('MAX_CONCURRENT_POSITIONS')],
     ['maxPortfolioExposurePct', optNum('MAX_EXPOSURE_PCT')],
     ['minPositionUsd', optNum('MIN_POSITION_USD')],
+    ['minLiquidityUsd', optNum('MIN_LIQUIDITY_USD')],
     ['stopLossPct', optNum('STOP_LOSS_PCT')],
     ['takeProfitPct', optNum('TAKE_PROFIT_PCT')],
     ['trailingStopPct', optNum('TRAILING_STOP_PCT')],

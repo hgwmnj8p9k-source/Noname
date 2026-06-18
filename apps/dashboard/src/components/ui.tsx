@@ -1,4 +1,39 @@
 import type { ReactNode } from 'react';
+import { dexLink, dexLinkFromTokenId } from '../format.js';
+
+/** A token symbol that links to its DexScreener chart when it's a real token. */
+export function TokenLink({
+  symbol,
+  chain,
+  address,
+  tokenId,
+  className = '',
+}: {
+  symbol: string;
+  chain?: string;
+  address?: string;
+  tokenId?: string;
+  className?: string;
+}) {
+  const href = tokenId
+    ? dexLinkFromTokenId(tokenId)
+    : chain && address
+      ? dexLink(chain, address)
+      : null;
+  if (!href) return <span className={`font-semibold ${className}`}>{symbol}</span>;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`font-semibold text-terminal-text hover:text-terminal-accent underline decoration-dotted underline-offset-2 ${className}`}
+      title={`Open ${symbol} on DexScreener`}
+    >
+      {symbol}
+      <span className="text-terminal-muted text-[9px] align-super ml-0.5">↗</span>
+    </a>
+  );
+}
 
 export function Panel({
   title,
