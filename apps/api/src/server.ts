@@ -7,7 +7,7 @@ import websocket from '@fastify/websocket';
 import fastifyStatic from '@fastify/static';
 import { ConsoleLogger, type EngineEvent } from '@noname/core';
 import { createEngine, type EngineSnapshot } from '@noname/engine';
-import { FileStateStore } from '@noname/persistence';
+import { FileStateStore } from '@noname/persistence/file-store';
 import { loadApiConfig } from './config.js';
 
 const config = loadApiConfig();
