@@ -6,7 +6,8 @@ import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
 import fastifyStatic from '@fastify/static';
 import { ConsoleLogger, type EngineEvent } from '@noname/core';
-import { createEngine } from '@noname/engine';
+import { createEngine, type EngineSnapshot } from '@noname/engine';
+import { FileStateStore } from '@noname/persistence';
 import { loadApiConfig } from './config.js';
 
 const config = loadApiConfig();
@@ -25,6 +26,30 @@ const engine = createEngine({
   jupiterConfig: config.lpFeePct !== undefined ? { lpFeePct: config.lpFeePct } : undefined,
   logger: logger.child('engine'),
 });
+
+// --- Durable state: restore on boot, persist on change ----------------------
+
+const store = config.stateFile ? new FileStateStore<EngineSnapshot>(config.stateFile) : null;
+if (store) {
+  try {
+    const saved = await store.load();
+    if (saved) engine.importState(saved);
+  } catch (err) {
+    logger.error('failed to restore state', { error: (err as Error).message });
+  }
+}
+
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+function persistState(): void {
+  if (!store || saveTimer) return;
+  // Debounce bursts of changes into one write.
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    void store.save(engine.exportState()).catch((err) =>
+      logger.error('failed to persist state', { error: (err as Error).message }),
+    );
+  }, 1_000);
+}
 
 const app = Fastify({ logger: false });
 await app.register(cors, { origin: true });
@@ -79,6 +104,8 @@ app.register(async (instance) => {
 });
 
 engine.onEvent((event: EngineEvent) => {
+  // Persist whenever positions or trades change.
+  if (event.type === 'position-opened' || event.type === 'position-closed') persistState();
   // Avoid flooding clients with the full per-tick market payload; the dashboard
   // pulls market rows from /api/state. Forward lightweight, actionable events.
   if (event.type === 'market') return;
@@ -91,6 +118,9 @@ engine.onEvent((event: EngineEvent) => {
     }
   }
 });
+
+// Periodic checkpoint so unrealized-PnL / high-water updates also survive.
+if (store) setInterval(persistState, 60_000);
 
 // --- Serve the built dashboard (single-service deployment) -------------------
 
@@ -125,6 +155,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
     logger.info('shutting down', { signal });
     engine.stop();
-    void app.close().then(() => process.exit(0));
+    const flush = store ? store.save(engine.exportState()).catch(() => undefined) : Promise.resolve();
+    void Promise.all([flush, app.close()]).then(() => process.exit(0));
   });
 }

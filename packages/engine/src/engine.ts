@@ -22,6 +22,7 @@ import { computePerformance, TradeAnalyzer } from '@noname/decision-log';
 import { createInMemoryRepositories, type Repositories } from '@noname/persistence';
 import type { EngineConfig } from './config.js';
 import type { EngineState, MarketRow, Opportunity } from './state.js';
+import { revivePosition, reviveTrade, type EngineSnapshot } from './persist.js';
 
 /**
  * The orchestrator. Each tick it ingests the market, manages open positions
@@ -88,6 +89,38 @@ export class Engine {
   /** Run exactly one tick. Used by tests, backtests, and manual stepping. */
   async tickOnce(): Promise<void> {
     await this.tick();
+  }
+
+  /** Serialize durable state (portfolio, open positions, trade journal). */
+  exportState(): EngineSnapshot {
+    const raw = {
+      version: 1,
+      savedAt: this.clock.now(),
+      ticks: this.ticks,
+      portfolio: this.portfolio.getBalances(),
+      positions: this.repos.positions.open(),
+      trades: this.repos.trades.list(1000),
+    };
+    // Fixed.toJSON renders money as decimal strings → JSON-safe snapshot.
+    return JSON.parse(JSON.stringify(raw)) as EngineSnapshot;
+  }
+
+  /** Rehydrate durable state after a restart. Call before {@link start}. */
+  importState(snapshot: EngineSnapshot): void {
+    this.ticks = snapshot.ticks ?? 0;
+    this.portfolio.restore({
+      cashUsd: fixed(snapshot.portfolio.cashUsd),
+      realizedPnlUsd: fixed(snapshot.portfolio.realizedPnlUsd),
+      peakEquityUsd: fixed(snapshot.portfolio.peakEquityUsd),
+      startingCashUsd: fixed(snapshot.portfolio.startingCashUsd),
+    });
+    for (const p of snapshot.positions) this.repos.positions.upsert(revivePosition(p));
+    for (const t of [...snapshot.trades].reverse()) this.repos.trades.save(reviveTrade(t));
+    this.log.info('state restored', {
+      positions: snapshot.positions.length,
+      trades: snapshot.trades.length,
+      cashUsd: snapshot.portfolio.cashUsd,
+    });
   }
 
   private priceOf(tokenId: TokenId): Fixed | undefined {

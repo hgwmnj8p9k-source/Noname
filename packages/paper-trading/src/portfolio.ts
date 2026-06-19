@@ -26,6 +26,14 @@ export interface TradeFinancials {
 
 export type PriceLookup = (tokenId: TokenId) => Fixed | undefined;
 
+/** Persistable internal balances of the portfolio. */
+export interface PaperPortfolioState {
+  readonly cashUsd: Fixed;
+  readonly realizedPnlUsd: Fixed;
+  readonly peakEquityUsd: Fixed;
+  readonly startingCashUsd: Fixed;
+}
+
 /**
  * Cash-accurate paper portfolio. All money math uses fixed-point arithmetic so
  * PnL never drifts. The portfolio owns cash, cumulative realized PnL and the
@@ -48,6 +56,23 @@ export class PaperPortfolio {
 
   get realizedPnlUsd(): Fixed {
     return this.realizedPnl;
+  }
+
+  /** Snapshot of internal balances for durable persistence. */
+  getBalances(): PaperPortfolioState {
+    return {
+      cashUsd: this.cash,
+      realizedPnlUsd: this.realizedPnl,
+      peakEquityUsd: this.peakEquity,
+      startingCashUsd: this.startingCashUsd,
+    };
+  }
+
+  /** Restore internal balances after a restart. */
+  restore(state: PaperPortfolioState): void {
+    this.cash = state.cashUsd;
+    this.realizedPnl = state.realizedPnlUsd;
+    this.peakEquity = state.peakEquityUsd;
   }
 
   /** Open a position from an entry fill, debiting cash for notional + fees. */

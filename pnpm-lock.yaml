@@ -56,6 +56,9 @@ importers:
       '@noname/paper-trading':
         specifier: workspace:*
         version: link:../../packages/paper-trading
+      '@noname/persistence':
+        specifier: workspace:*
+        version: link:../../packages/persistence
       '@noname/strategy':
         specifier: workspace:*
         version: link:../../packages/strategy

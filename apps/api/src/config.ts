@@ -20,6 +20,8 @@ export interface ApiConfig {
   readonly autoStart: boolean;
   /** Absolute or relative path to the built dashboard to serve, if present. */
   readonly staticDir: string;
+  /** File path for durable state. Empty disables persistence. */
+  readonly stateFile: string;
 }
 
 function num(name: string, fallback: number): number {
@@ -107,5 +109,6 @@ export function loadApiConfig(): ApiConfig {
     lpFeePct: optNum('LP_FEE_PCT'),
     autoStart: (process.env.AUTO_START ?? 'true') !== 'false',
     staticDir: process.env.STATIC_DIR ?? '../dashboard/dist',
+    stateFile: process.env.STATE_FILE ?? '',
   };
 }

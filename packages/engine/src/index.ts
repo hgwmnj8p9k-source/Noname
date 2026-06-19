@@ -26,6 +26,7 @@ import type { EngineConfig } from './config.js';
 
 export * from './config.js';
 export * from './state.js';
+export * from './persist.js';
 export { Engine } from './engine.js';
 
 export interface EngineFactoryOptions {

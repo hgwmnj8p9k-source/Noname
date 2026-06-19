@@ -10,7 +10,8 @@
     { "path": "../../packages/engine" },
     { "path": "../../packages/market-data" },
     { "path": "../../packages/strategy" },
-    { "path": "../../packages/paper-trading" }
+    { "path": "../../packages/paper-trading" },
+    { "path": "../../packages/persistence" }
   ],
   "include": ["src/**/*.ts"]
 }
